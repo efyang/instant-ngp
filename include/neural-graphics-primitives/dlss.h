@@ -15,12 +15,30 @@
 #pragma once
 
 #include <neural-graphics-primitives/common.h>
+#include <vulkan/vulkan.h>
+#include <neural-graphics-primitives/common_device.cuh>
 
 #include <Eigen/Dense>
 
 #include <memory>
 
 NGP_NAMESPACE_BEGIN
+
+// purely used because this uses a bunch of static variables? kinda nasty
+void init_ngp_vulkan_manual(VkInstance vk_instance,
+							VkDebugUtilsMessengerEXT vk_debug_messenger,
+							VkPhysicalDevice vk_physical_device,
+							VkDevice vk_device,
+							VkQueue vk_queue,
+							VkCommandPool vk_command_pool,
+							VkCommandBuffer vk_command_buffer);
+class IVulkanTexture {
+	public:
+		virtual ~IVulkanTexture() {}
+		virtual cudaSurfaceObject_t surface() = 0;
+		virtual Eigen::Vector2i size() const = 0;
+};
+std::shared_ptr<IVulkanTexture> vktexture_init(const Eigen::Vector2i& size, uint32_t n_channels);
 
 class IDlss {
 public:

@@ -2512,6 +2512,7 @@ Testbed::Testbed(ETestbedMode mode)
 	set_exposure(0);
 	set_min_level(0.f);
 	set_max_level(1.f);
+	tlog::info() << "Successfully instantiated instance of Testbed.";
 }
 
 Testbed::~Testbed() {
@@ -2669,6 +2670,10 @@ __global__ void dlss_prep_kernel(
 	}
 }
 
+// TODO: make a modified version of this to render only nerf
+// cudarenderbuffer can be cudasurface2d
+// make cudasurface2d from vulkanimage
+// this is the main entrypoint (besides testbed initialization)
 void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matrix<float, 3, 4>& camera_matrix1, const Vector4f& nerf_rolling_shutter, CudaRenderBuffer& render_buffer, bool to_srgb) {
 	Vector2i max_res = m_window_res.cwiseMax(render_buffer.in_resolution());
 

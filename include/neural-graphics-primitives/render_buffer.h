@@ -37,6 +37,31 @@ public:
 	virtual void resize(const Eigen::Vector2i&) = 0;
 };
 
+class VulkanTextureSurface: public SurfaceProvider {
+	public:
+		VulkanTextureSurface() = default;
+		VulkanTextureSurface(const Eigen::Vector2i& size, uint32_t n_channels) {
+			m_vulkan_texture = vktexture_init(size, n_channels);
+		}
+		cudaSurfaceObject_t surface() {
+			return m_vulkan_texture->surface();
+		}
+		cudaArray_t array() {
+			// TODO: implement this?
+			// shouldn't be necessary, only gets used by m_windowless_render_surface memcpy2d
+			return nullptr;
+		}
+		Eigen::Vector2i resolution() const {
+			return m_vulkan_texture->size();
+		}
+		void resize(const Eigen::Vector2i&) {
+			// will be non-resizable for now (do nothing)
+		}
+
+	private:
+		std::shared_ptr<IVulkanTexture> m_vulkan_texture;
+};
+
 class CudaSurface2D : public SurfaceProvider {
 public:
 	CudaSurface2D() {

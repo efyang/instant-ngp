@@ -80,6 +80,23 @@ static VkQueue vk_queue = VK_NULL_HANDLE;
 static VkCommandPool vk_command_pool = VK_NULL_HANDLE;
 static VkCommandBuffer vk_command_buffer = VK_NULL_HANDLE;
 
+void init_ngp_vulkan_manual(VkInstance vk_instance_p,
+							VkDebugUtilsMessengerEXT vk_debug_messenger_p,
+							VkPhysicalDevice vk_physical_device_p,
+							VkDevice vk_device_p,
+							VkQueue vk_queue_p,
+							VkCommandPool vk_command_pool_p,
+							VkCommandBuffer vk_command_buffer_p) {
+	vk_instance = vk_instance_p;
+	vk_debug_messenger = vk_debug_messenger_p;
+	vk_physical_device = vk_physical_device_p;
+	vk_device = vk_device_p;
+	vk_queue = vk_queue_p;
+	vk_command_pool = vk_command_pool_p;
+	vk_command_buffer = vk_command_buffer_p;
+}
+
+
 static bool ngx_initialized = false;
 static NVSDK_NGX_Parameter* ngx_parameters = nullptr;
 
@@ -470,7 +487,7 @@ void vk_command_buffer_end_and_submit_sync() {
 	vk_command_buffer_submit_sync();
 }
 
-class VulkanTexture {
+class VulkanTexture: public IVulkanTexture {
 public:
 	VulkanTexture(const Vector2i& size, uint32_t n_channels) : m_size{size}, m_n_channels{n_channels} {
 		VkImageCreateInfo image_info{};
@@ -568,7 +585,7 @@ public:
 		VK_CHECK_THROW(vkCreateImageView(vk_device, &view_info, nullptr, &m_vk_image_view));
 
 		// Map to NGX
-		m_ngx_resource = NVSDK_NGX_Create_ImageView_Resource_VK(m_vk_image_view, m_vk_image, view_info.subresourceRange, image_info.format, m_size.x(), m_size.y(), true);
+		// m_ngx_resource = NVSDK_NGX_Create_ImageView_Resource_VK(m_vk_image_view, m_vk_image, view_info.subresourceRange, image_info.format, m_size.x(), m_size.y(), true);
 
 		// Map to CUDA memory: VkDeviceMemory->FD/HANDLE->cudaExternalMemory->CUDA pointer
 #ifdef _WIN32
@@ -729,6 +746,10 @@ private:
 
 	NVSDK_NGX_Resource_VK m_ngx_resource = {};
 };
+
+std::shared_ptr<IVulkanTexture> vktexture_init(const Eigen::Vector2i& size, uint32_t n_channels) {
+	return std::make_shared<VulkanTexture>(size, n_channels);
+}
 
 NVSDK_NGX_PerfQuality_Value ngx_dlss_quality(EDlssQuality quality) {
 	switch (quality) {
