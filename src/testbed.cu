@@ -2678,10 +2678,11 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 	Vector2i max_res = m_window_res.cwiseMax(render_buffer.in_resolution());
 
 	render_buffer.clear_frame(m_stream.get());
-
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 	Vector2f focal_length = calc_focal_length(render_buffer.in_resolution(), m_fov_axis, m_zoom);
 	Vector2f screen_center = render_screen_center();
 
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 	if (m_quilting_dims != Vector2i::Ones() && m_quilting_dims != Vector2i{2, 1}) {
 		// In the case of a holoplay lenticular screen, m_scale represents the inverse distance of the head above the display.
 		m_parallax_shift.z() = 1.0f / m_scale;
@@ -2690,7 +2691,9 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 	switch (m_testbed_mode) {
 		case ETestbedMode::Nerf:
 			if (!m_render_ground_truth || m_ground_truth_alpha < 1.0f) {
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 				render_nerf(render_buffer, max_res, focal_length, camera_matrix0, camera_matrix1, nerf_rolling_shutter, screen_center, m_stream.get());
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 			}
 			break;
 		case ETestbedMode::Sdf:
@@ -2790,8 +2793,10 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 			throw std::runtime_error{"Invalid render mode."};
 	}
 
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 	render_buffer.set_color_space(m_color_space);
 	render_buffer.set_tonemap_curve(m_tonemap_curve);
+	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 
 	// Prepare DLSS data: motion vectors, scaled depth, exposure
 	if (render_buffer.dlss()) {
@@ -2833,6 +2838,10 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 	m_image.prev_pos = m_image.pos;
 
 	render_buffer.accumulate(m_exposure, m_stream.get());
+	// this part broke because we didn't resize the cudarenderbuffer to the same size,
+	// so tonemap function broke (on assert)
+	// spammed streamsyncrhonize to find this
+	// now passes cuda-memcehck!!!!!
 	render_buffer.tonemap(m_exposure, m_background_color, to_srgb ? EColorSpace::SRGB : EColorSpace::Linear, m_stream.get());
 
 	if (m_testbed_mode == ETestbedMode::Nerf) {

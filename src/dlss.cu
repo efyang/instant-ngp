@@ -80,6 +80,10 @@ static VkQueue vk_queue = VK_NULL_HANDLE;
 static VkCommandPool vk_command_pool = VK_NULL_HANDLE;
 static VkCommandBuffer vk_command_buffer = VK_NULL_HANDLE;
 
+
+static bool ngx_initialized = false;
+static NVSDK_NGX_Parameter* ngx_parameters = nullptr;
+
 void init_ngp_vulkan_manual(VkInstance vk_instance_p,
 							VkDebugUtilsMessengerEXT vk_debug_messenger_p,
 							VkPhysicalDevice vk_physical_device_p,
@@ -94,11 +98,19 @@ void init_ngp_vulkan_manual(VkInstance vk_instance_p,
 	vk_queue = vk_queue_p;
 	vk_command_pool = vk_command_pool_p;
 	vk_command_buffer = vk_command_buffer_p;
+	
+	std::wstring path;
+#ifdef _WIN32
+	path = fs::path::getcwd().wstr();
+#else
+	std::string tmp = fs::path::getcwd().str();
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+	path = converter.from_bytes(tmp);
+#endif
+
+	NGX_CHECK_THROW(NVSDK_NGX_VULKAN_Init_with_ProjectID("ea75345e-5a42-4037-a5c9-59bf94dee157", NVSDK_NGX_ENGINE_TYPE_CUSTOM, "1.0.0", path.c_str(), vk_instance, vk_physical_device, vk_device));
+	ngx_initialized = true;
 }
-
-
-static bool ngx_initialized = false;
-static NVSDK_NGX_Parameter* ngx_parameters = nullptr;
 
 uint32_t vk_find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) {
 	VkPhysicalDeviceMemoryProperties mem_properties;
@@ -585,7 +597,7 @@ public:
 		VK_CHECK_THROW(vkCreateImageView(vk_device, &view_info, nullptr, &m_vk_image_view));
 
 		// Map to NGX
-		// m_ngx_resource = NVSDK_NGX_Create_ImageView_Resource_VK(m_vk_image_view, m_vk_image, view_info.subresourceRange, image_info.format, m_size.x(), m_size.y(), true);
+		m_ngx_resource = NVSDK_NGX_Create_ImageView_Resource_VK(m_vk_image_view, m_vk_image, view_info.subresourceRange, image_info.format, m_size.x(), m_size.y(), true);
 
 		// Map to CUDA memory: VkDeviceMemory->FD/HANDLE->cudaExternalMemory->CUDA pointer
 #ifdef _WIN32
@@ -727,6 +739,14 @@ public:
 
 	Vector2i size() const {
 		return m_size;
+	}
+
+
+	VkImage vk_image() {
+		return m_vk_image;
+	}
+	VkImageView vk_image_view() {
+		return m_vk_image_view;
 	}
 
 private:

@@ -37,6 +37,8 @@ class IVulkanTexture {
 		virtual ~IVulkanTexture() {}
 		virtual cudaSurfaceObject_t surface() = 0;
 		virtual Eigen::Vector2i size() const = 0;
+		virtual VkImage vk_image() = 0;
+		virtual VkImageView vk_image_view() = 0;
 };
 std::shared_ptr<IVulkanTexture> vktexture_init(const Eigen::Vector2i& size, uint32_t n_channels);
 
