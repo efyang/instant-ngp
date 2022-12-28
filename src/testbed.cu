@@ -2675,6 +2675,7 @@ __global__ void dlss_prep_kernel(
 // make cudasurface2d from vulkanimage
 // this is the main entrypoint (besides testbed initialization)
 void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matrix<float, 3, 4>& camera_matrix1, const Vector4f& nerf_rolling_shutter, CudaRenderBuffer& render_buffer, bool to_srgb) {
+	tlog::info() << camera_matrix0;
 	Vector2i max_res = m_window_res.cwiseMax(render_buffer.in_resolution());
 
 	render_buffer.clear_frame(m_stream.get());
@@ -2691,9 +2692,7 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 	switch (m_testbed_mode) {
 		case ETestbedMode::Nerf:
 			if (!m_render_ground_truth || m_ground_truth_alpha < 1.0f) {
-	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 				render_nerf(render_buffer, max_res, focal_length, camera_matrix0, camera_matrix1, nerf_rolling_shutter, screen_center, m_stream.get());
-	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 			}
 			break;
 		case ETestbedMode::Sdf:
@@ -2793,10 +2792,8 @@ void Testbed::render_frame(const Matrix<float, 3, 4>& camera_matrix0, const Matr
 			throw std::runtime_error{"Invalid render mode."};
 	}
 
-	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 	render_buffer.set_color_space(m_color_space);
 	render_buffer.set_tonemap_curve(m_tonemap_curve);
-	// CUDA_CHECK_THROW(cudaStreamSynchronize(m_stream.get()));
 
 	// Prepare DLSS data: motion vectors, scaled depth, exposure
 	if (render_buffer.dlss()) {

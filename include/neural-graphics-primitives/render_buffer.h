@@ -58,6 +58,13 @@ class VulkanTextureSurface: public SurfaceProvider {
 			// will be non-resizable for now (do nothing)
 		}
 
+		VkImage vk_image() {
+			return m_vulkan_texture->vk_image();
+		}
+		VkImageView vk_image_view() {
+			return m_vulkan_texture->vk_image_view();
+		}
+
 	private:
 		std::shared_ptr<IVulkanTexture> m_vulkan_texture;
 };
